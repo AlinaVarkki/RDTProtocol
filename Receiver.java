@@ -19,14 +19,12 @@ private byte[] data;
     }
 
     public byte[] extract(TransportLayerPacket receivedPacket){
-        data = receivedPacket.getData();
-        return data;
+        return receivedPacket.getData();
     }
 
     @Override
     public void rdt_receive(TransportLayerPacket pkt) {
-        extract(pkt);
-        simulator.sendToApplicationLayer(this, data);
+        simulator.sendToApplicationLayer(this, extract(pkt));
     }
 
     @Override

@@ -14,7 +14,7 @@ public class TransportLayerPacket {
     }
 
     public TransportLayerPacket(TransportLayerPacket pkt) {
-        // complete this method
+        this.data = pkt.getData();
     }
 
     public void setSeqnum(int seqnum) {
