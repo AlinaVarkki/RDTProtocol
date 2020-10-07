@@ -9,6 +9,10 @@ public class TransportLayerPacket {
 
     // You may need extra methods
 
+    public TransportLayerPacket(byte[] data) {
+        this.data = data;
+    }
+
     public TransportLayerPacket(TransportLayerPacket pkt) {
         // complete this method
     }
