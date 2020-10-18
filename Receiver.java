@@ -1,36 +1,34 @@
 public class Receiver extends TransportLayer {
 
-
-    private byte[] data;
-    private byte[] NAK;
-    private byte[] ACK;
+    private TransportLayerPacket currentPacket;
+    private int seqnum;
 
     public Receiver(String name, NetworkSimulator simulator) {
         super(name, simulator);
     }
-    private TransportLayerPacket currentPacket = null;
 
     @Override
     public void init() {
-        NAK = "NAK".getBytes();
-        ACK = "ACK".getBytes();
+        currentPacket = null;
+        seqnum = 0;
     }
 
     @Override
     public void rdt_send(byte[] data) {
-        makePacket(data);
-        udt_send();
+
     }
 
     @Override
     public void rdt_receive(TransportLayerPacket pkt) {
-        if(isCorrupt(pkt)) {
-            System.out.println("Corrupt packet detected!");
-            rdt_send(NAK);
+        if(isCorrupt(pkt) || pkt.getSeqnum() != seqnum){
+            currentPacket = new TransportLayerPacket("NAK".getBytes() , 1 - seqnum, 1);
+            udt_send();
         }
-        else {
-            rdt_send(ACK);
-            simulator.sendToApplicationLayer(this, extract(pkt));
+        else{
+            simulator.sendToApplicationLayer(this,pkt.getData());
+            currentPacket = new TransportLayerPacket("ACK".getBytes(), seqnum, 1);
+            udt_send();
+            seqnum = 1 - seqnum;
         }
     }
 
@@ -39,24 +37,18 @@ public class Receiver extends TransportLayer {
 
     }
 
-    public byte[] extract(TransportLayerPacket receivedPacket){
-        return receivedPacket.getData();
-    }
-
     private boolean isCorrupt (TransportLayerPacket receivedPacket){
-        byte compareChecksum = 0;
-        for(byte bit : receivedPacket.getData()){
-            compareChecksum += bit;
+        if(receivedPacket.getSeqnum() <= 1 && receivedPacket.getSeqnum() >= 0 && receivedPacket.getAcknum() <= 1 && receivedPacket.getAcknum() >= 0) {
+            byte compareChecksum = 0;
+            for (byte bit : receivedPacket.getData()) {
+                compareChecksum += bit;
+            }
+            compareChecksum += receivedPacket.getChecksum();
+
+            if (compareChecksum == -1) return false;
+            else return true;
         }
-        compareChecksum += receivedPacket.getChecksum();
-
-        if (compareChecksum == -1) return false;
-        else return true;
-    }
-
-    private TransportLayerPacket makePacket(byte[] data){
-        currentPacket = new TransportLayerPacket(data);
-        return currentPacket;
+        else return false;
     }
 
     private void udt_send(){

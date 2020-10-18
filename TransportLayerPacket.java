@@ -10,19 +10,23 @@ public class TransportLayerPacket {
 
     // You may need extra methods
 
-    public TransportLayerPacket(byte[] data) {
+    public TransportLayerPacket(byte[] data, int seqnum, int acknum) {
         this.data = data;
+        this.seqnum = seqnum;
+        this.acknum = acknum;
         makeChecksum();
     }
 
     public TransportLayerPacket(TransportLayerPacket pkt) {
         this.data = pkt.getData();
-        makeChecksum();
+        this.seqnum = pkt.getSeqnum();
+        this.acknum = pkt.getAcknum();
+        setChecksum(pkt.getChecksum());
 
     }
 
-    public void setSeqnum(int seqnum) {
-        this.seqnum = seqnum;
+    public void setSeqnum(int new_seqnum) {
+        seqnum = new_seqnum;
     }
 
     public void setAcknum(int acknum) {
