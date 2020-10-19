@@ -22,6 +22,7 @@ public class Sender extends TransportLayer {
         if(currentPacket == null) {
             currentPacket = new TransportLayerPacket(data, seqnum, 0);
             udt_send();
+            simulator.startTimer(this, 10.0);
         }
         else{
             pktQ.add(new TransportLayerPacket (data, seqnum, 0));
@@ -32,20 +33,25 @@ public class Sender extends TransportLayer {
     public void rdt_receive(TransportLayerPacket pkt) {
         if(isCorrupt(pkt) || pkt.getSeqnum() != seqnum){
             udt_send();
+
         }
         else{
             currentPacket = pktQ.poll();
             seqnum = 1 - seqnum;
+            simulator.stopTimer(this);
             if(currentPacket != null){
                 currentPacket.setSeqnum(seqnum);
                 udt_send();
+
             }
         }
     }
 
     @Override
     public void timerInterrupt() {
-
+     System.out.println("error resending packet");
+     udt_send();
+     simulator.startTimer(this, 10.0);
     }
 
     private void udt_send(){

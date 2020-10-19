@@ -31,7 +31,6 @@ public class Receiver extends TransportLayer {
             seqnum = 1 - seqnum;
         }
     }
-
     @Override
     public void timerInterrupt() {
 
