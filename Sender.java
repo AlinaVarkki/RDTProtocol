@@ -22,9 +22,6 @@ public class Sender extends TransportLayer {
         if(currentPacket == null) {
             currentPacket = new TransportLayerPacket(data, seqnum, 0);
             udt_send();
-            /* timer started */
-            simulator.startTimer(this, 10.0);
-
         }
         else{
             pktQ.add(new TransportLayerPacket (data, seqnum, 0));
@@ -33,6 +30,8 @@ public class Sender extends TransportLayer {
 
     @Override
     public void rdt_receive(TransportLayerPacket pkt) {
+        System.out.println("stopped");
+        simulator.stopTimer(this);
         if(isCorrupt(pkt) || pkt.getSeqnum() != seqnum){
             udt_send();
 
@@ -41,8 +40,8 @@ public class Sender extends TransportLayer {
             currentPacket = pktQ.poll();
             seqnum = 1 - seqnum;
             /* will stop the current timer if there is one running */
-            simulator.stopTimer(this);
-            System.out.println("stopped");
+
+
             if(currentPacket != null){
                 currentPacket.setSeqnum(seqnum);
                 udt_send();
@@ -54,15 +53,14 @@ public class Sender extends TransportLayer {
     @Override
     public void timerInterrupt() {
         /* called when timer is finished and not stopped and then resends packet*/
-     System.out.println("timer done resending packet");
-
-            udt_send();
-            simulator.startTimer(this, 10.0);
-
+        System.out.println("timer done resending packet");
+        udt_send();
     }
 
     private void udt_send(){
         if(currentPacket != null) {
+            /* timer started */
+            simulator.startTimer(this, 50.0);
             simulator.sendToNetworkLayer(this, currentPacket);
         }
     }
