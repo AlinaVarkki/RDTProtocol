@@ -30,7 +30,7 @@ public class Sender extends TransportLayer {
 
     @Override
     public void rdt_receive(TransportLayerPacket pkt) {
-        System.out.println("stopped");
+        
         simulator.stopTimer(this);
         if(isCorrupt(pkt) || pkt.getSeqnum() != seqnum){
             udt_send();
@@ -53,7 +53,7 @@ public class Sender extends TransportLayer {
     @Override
     public void timerInterrupt() {
         /* called when timer is finished and not stopped and then resends packet*/
-        System.out.println("timer done resending packet");
+
         udt_send();
     }
 
