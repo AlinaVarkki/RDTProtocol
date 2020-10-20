@@ -39,6 +39,7 @@ public class Sender extends TransportLayer {
             currentPacket = pktQ.poll();
             seqnum = 1 - seqnum;
             simulator.stopTimer(this);
+            System.out.println("stopped");
             if(currentPacket != null){
                 currentPacket.setSeqnum(seqnum);
                 udt_send();
@@ -49,14 +50,17 @@ public class Sender extends TransportLayer {
 
     @Override
     public void timerInterrupt() {
-     System.out.println("error resending packet");
-     udt_send();
-     simulator.startTimer(this, 10.0);
+     System.out.println("timer done resending packet");
+
+            udt_send();
+            simulator.startTimer(this, 10.0);
+
     }
 
     private void udt_send(){
-
-        simulator.sendToNetworkLayer(this, currentPacket);
+        if(currentPacket != null) {
+            simulator.sendToNetworkLayer(this, currentPacket);
+        }
     }
 
     private boolean isCorrupt (TransportLayerPacket receivedPacket){
