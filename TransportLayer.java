@@ -21,7 +21,7 @@ public abstract class TransportLayer {
     }
 
     public boolean isCorrupt (TransportLayerPacket receivedPacket){
-        if(receivedPacket.getSeqnum() <= 1 && receivedPacket.getSeqnum() >= 0 && receivedPacket.getAcknum() <= 1 && receivedPacket.getAcknum() >= 0) {
+        if(receivedPacket.getSeqnum() >= -1 && receivedPacket.getAcknum() <= 1 && receivedPacket.getAcknum() >= 0) {
             byte compareChecksum = 0;
             for (byte bit : receivedPacket.getData()) {
                 compareChecksum += bit;

@@ -248,7 +248,7 @@ public class NetworkSimulator {
         }
 
         if (debugLevel > 1) {
-            System.out.format("        (%.2f) NetworkSimulator.sendToNetworkLayer(%s, %s)\n", simulationTime, source.getName(), pktCopy.toString());
+            System.out.format("        (%.2f) NetworkSimulator.sendToNetworkLayer(%s, %s)\n", simulationTime, source.getName(), new String(pktCopy.getData()));
         }
         eventQueue.add(new Event((lastTime + (1 + 2 * rng.nextFloat())), EventType.FROM_LAYER3, (source.equals(sender) ? receiver : sender), pktCopy));
     }

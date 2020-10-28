@@ -21,8 +21,7 @@ public class TransportLayerPacket {
         this.data = pkt.getData();
         this.seqnum = pkt.getSeqnum();
         this.acknum = pkt.getAcknum();
-        setChecksum(pkt.getChecksum());
-
+        makeChecksum();
     }
 
     public void setSeqnum(int new_seqnum) {

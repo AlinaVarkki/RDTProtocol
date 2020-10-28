@@ -30,18 +30,14 @@ public class Sender extends TransportLayer {
 
     @Override
     public void rdt_receive(TransportLayerPacket pkt) {
-        
+        //System.out.println("stopped");
         simulator.stopTimer(this);
-        if(isCorrupt(pkt) || pkt.getSeqnum() != seqnum){
+        if(isCorrupt(pkt) || pkt.getSeqnum() < seqnum){
             udt_send();
-
         }
         else{
             currentPacket = pktQ.poll();
-            //seqnum = 1 - seqnum;
             seqnum ++;
-            /* will stop the current timer if there is one running */
-
             if(currentPacket != null){
                 currentPacket.setSeqnum(seqnum);
                 udt_send();
@@ -53,7 +49,7 @@ public class Sender extends TransportLayer {
     @Override
     public void timerInterrupt() {
         /* called when timer is finished and not stopped and then resends packet*/
-
+        //System.out.println("timer done resending packet");
         udt_send();
     }
 
@@ -61,7 +57,7 @@ public class Sender extends TransportLayer {
         if(currentPacket != null) {
             /* timer started */
             simulator.startTimer(this, 50.0);
-            simulator.sendToNetworkLayer(this, currentPacket);
+            simulator.sendToNetworkLayer(this, new TransportLayerPacket(currentPacket));
         }
     }
 
