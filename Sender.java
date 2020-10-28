@@ -24,7 +24,7 @@ public class Sender extends TransportLayer {
             udt_send();
         }
         else{
-            pktQ.add(new TransportLayerPacket (data, seqnum, 0));
+            pktQ.add(new TransportLayerPacket (data, 0, 0));
         }
     }
 
@@ -38,9 +38,9 @@ public class Sender extends TransportLayer {
         }
         else{
             currentPacket = pktQ.poll();
-            seqnum = 1 - seqnum;
+            //seqnum = 1 - seqnum;
+            seqnum ++;
             /* will stop the current timer if there is one running */
-
 
             if(currentPacket != null){
                 currentPacket.setSeqnum(seqnum);
