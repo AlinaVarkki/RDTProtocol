@@ -13,10 +13,6 @@ public class Sender extends TransportLayer {
     private ArrayList<Integer> ACKedSeqNumbers = new ArrayList<>();
     private ArrayList<TransportLayerPacket> sentNotACKed = new ArrayList<>();
 
-    //send 0 + 4 packets
-    //if last sent is smaller than windowsize + lastACKed
-    //sent next one
-
     public Sender(String name, NetworkSimulator simulator) {
         super(name, simulator);
     }
