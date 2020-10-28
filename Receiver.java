@@ -25,11 +25,11 @@ public class Receiver extends TransportLayer {
     @Override
     public void rdt_receive(TransportLayerPacket pkt) {
         if(isCorrupt(pkt)){
-            currentPacket = new TransportLayerPacket("NAK".getBytes() , seqnum - 1, 1);
-            udt_send();
+            //currentPacket = new TransportLayerPacket("NAK".getBytes() , seqnum - 1, 1);
+            //udt_send();
         }
         else if (pkt.getSeqnum() < seqnum){
-            currentPacket = new TransportLayerPacket("NXT".getBytes(), seqnum - 1, 1);
+            currentPacket = new TransportLayerPacket("NXT".getBytes(), pkt.getSeqnum(), 1);
             udt_send();
         }else if(pkt.getSeqnum() > seqnum){
             buffer.add(pkt);

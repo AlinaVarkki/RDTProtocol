@@ -5,6 +5,9 @@ public class Sender extends TransportLayer {
     private TransportLayerPacket currentPacket;
     private int seqnum;
     private Queue<TransportLayerPacket> pktQ;
+    private double timeoutDelay = 50;
+    private boolean timerGoing = false;
+    private LinkedList<double[]> timerQ;
 
     private int windowSize = 4;
     private int nextACKedSeqNum = 0;
@@ -22,82 +25,108 @@ public class Sender extends TransportLayer {
         seqnum = -1;
         currentPacket = null;
         pktQ = new LinkedList<>();
+        timerQ = new LinkedList<>();
     }
 
     @Override
     public void rdt_send(byte[] data) {
-            pktQ.add(new TransportLayerPacket (data, 0, 0));
-            udt_send();
+        pktQ.add(new TransportLayerPacket(data, 0, 0));
+        udt_send();
     }
 
     @Override
     public void rdt_receive(TransportLayerPacket pkt) {
         //System.out.println("stopped");
-        simulator.stopTimer(this);
-        if(isCorrupt(pkt) || pkt.getSeqnum() < seqnum){
+        if (!isCorrupt(pkt)) {
 
-            udt_send();
+            stopTimer(pkt.getSeqnum());
 
-        }
-        else{
-            TransportLayerPacket nowACKedPacked = null;
-            
-            for(TransportLayerPacket p: sentNotACKed){
-                if(p.getSeqnum() == pkt.getSeqnum()){
-                    nowACKedPacked = p;
+            for (TransportLayerPacket p : sentNotACKed) {
+                if (p.getSeqnum() == pkt.getSeqnum()) {
+                    sentNotACKed.remove(p);
                     break;
                 }
             }
-            sentNotACKed.remove(nowACKedPacked);
-            
-                if(pkt.getSeqnum() == nextACKedSeqNum) {
+
+            if (pkt.getSeqnum() == nextACKedSeqNum) {
+                nextACKedSeqNum++;
+                while (ACKedSeqNumbers.contains(nextACKedSeqNum)) {
+                    ACKedSeqNumbers.removeAll(Arrays.asList(nextACKedSeqNum));
                     nextACKedSeqNum++;
-                    while (ACKedSeqNumbers.contains(nextACKedSeqNum)){
-                        ACKedSeqNumbers.remove(nextACKedSeqNum);
-                        nextACKedSeqNum++;
-                    }
-                    udt_send();
-                }else{
-                    //if we cannot move the window yet because seqNum is not next, store it
-                    ACKedSeqNumbers.add(pkt.getSeqnum());
                 }
+                udt_send();
+            } else {
+                //if we cannot move the window yet because seqNum is not next, store it
+                ACKedSeqNumbers.add(pkt.getSeqnum());
+            }
         }
     }
 
     @Override
     public void timerInterrupt() {
-        /* called when timer is finished and not stopped and then resends packet*/
-        //System.out.println("timer done resending packet");
-        udt_send();
-    }
+        // figure out what packet has been dropped
+        // resend that packet
 
-    private void udt_send(){
+        boolean keepInterrupting = true;
+        while(keepInterrupting || timerQ.peek() == null) {
+            if (timerQ.peek()[1] <= simulator.simulationTime) {
+                for (TransportLayerPacket p : sentNotACKed) {
+                    if (p.getSeqnum() == timerQ.peek()[0]) {
+                        timerQ.poll();
+                        simulator.sendToNetworkLayer(this,p);
+                        timerQ.add(new double[] {(double) p.getSeqnum(), simulator.simulationTime + timeoutDelay});
+                        break;
+                    }
+                }
 
-        while (nextACKedSeqNum + windowSize > lastSentSeqNum) {
 
-            currentPacket = pktQ.poll();
-
-            seqnum ++;
-
-            if(currentPacket != null){
-                currentPacket.setSeqnum(seqnum);
-            }else{
-                //in case there are no packets in the queue
-                break;
+            } else {
+                keepInterrupting = false;
             }
-
-            if (currentPacket != null) {
-                /* timer started */
-                simulator.startTimer(this, 50.0);
-                simulator.sendToNetworkLayer(this, new TransportLayerPacket(currentPacket));
-                
-                sentNotACKed.add(currentPacket);
-                
-                lastSentSeqNum++;
-            }
+        }
+        if (timerQ.peek() != null) {
+            simulator.startTimer(this, timerQ.peek()[1] - simulator.simulationTime);
+            timerGoing = true;
         }
     }
 
+    private void udt_send() {
 
+        while (nextACKedSeqNum + windowSize > lastSentSeqNum) {
+            currentPacket = pktQ.poll();
+            if (currentPacket != null) {
+                seqnum++;
+                currentPacket.setSeqnum(seqnum);
+                sentNotACKed.add(currentPacket);
+                lastSentSeqNum++;
+                startTimer();
+                simulator.sendToNetworkLayer(this, new TransportLayerPacket(currentPacket));
+            }
+            else break;
+        }
+    }
 
+    private void startTimer(){
+        if(!timerGoing) {
+            simulator.startTimer(this, timeoutDelay);
+        }
+        timerQ.add(new double[] {Double.valueOf(seqnum), simulator.simulationTime + timeoutDelay});
+        timerGoing = true;
+    }
+
+    private void stopTimer(double pktSeqnum){
+
+        simulator.stopTimer(this);
+        timerGoing = false;
+        for(double[] query : timerQ){
+            if(query[0] == pktSeqnum){
+                timerQ.remove(query);
+                break;
+            }
+        }
+        if (timerQ.peek()!=null){
+           timerInterrupt();
+
+        }
+    }
 }
