@@ -6,26 +6,32 @@ public class Sender extends TransportLayer {
     private int seqnum;
     private Queue<TransportLayerPacket> pktQ;
 
+    private int windowSize = 4;
+    private int nextACKedSeqNum = 0;
+    private int lastSentSeqNum = 0;
+    //only the ones not in sequence
+    private ArrayList<Integer> ACKedSeqNumbers = new ArrayList<>();
+    private ArrayList<TransportLayerPacket> sentNotACKed = new ArrayList<>();
+
+    //send 0 + 4 packets
+    //if last sent is smaller than windowsize + lastACKed
+    //sent next one
+
     public Sender(String name, NetworkSimulator simulator) {
         super(name, simulator);
     }
 
     @Override
     public void init() {
-        seqnum = 0;
+        seqnum = -1;
         currentPacket = null;
         pktQ = new LinkedList<>();
     }
 
     @Override
     public void rdt_send(byte[] data) {
-        if(currentPacket == null) {
-            currentPacket = new TransportLayerPacket(data, seqnum, 0);
-            udt_send();
-        }
-        else{
             pktQ.add(new TransportLayerPacket (data, 0, 0));
-        }
+            udt_send();
     }
 
     @Override
@@ -33,16 +39,32 @@ public class Sender extends TransportLayer {
         //System.out.println("stopped");
         simulator.stopTimer(this);
         if(isCorrupt(pkt) || pkt.getSeqnum() < seqnum){
+
             udt_send();
+
         }
         else{
-            currentPacket = pktQ.poll();
-            seqnum ++;
-            if(currentPacket != null){
-                currentPacket.setSeqnum(seqnum);
-                udt_send();
-
+            TransportLayerPacket nowACKedPacked = null;
+            
+            for(TransportLayerPacket p: sentNotACKed){
+                if(p.getSeqnum() == pkt.getSeqnum()){
+                    nowACKedPacked = p;
+                    break;
+                }
             }
+            sentNotACKed.remove(nowACKedPacked);
+            
+                if(pkt.getSeqnum() == nextACKedSeqNum) {
+                    nextACKedSeqNum++;
+                    while (ACKedSeqNumbers.contains(nextACKedSeqNum)){
+                        ACKedSeqNumbers.remove(nextACKedSeqNum);
+                        nextACKedSeqNum++;
+                    }
+                    udt_send();
+                }else{
+                    //if we cannot move the window yet because seqNum is not next, store it
+                    ACKedSeqNumbers.add(pkt.getSeqnum());
+                }
         }
     }
 
@@ -54,10 +76,29 @@ public class Sender extends TransportLayer {
     }
 
     private void udt_send(){
-        if(currentPacket != null) {
-            /* timer started */
-            simulator.startTimer(this, 50.0);
-            simulator.sendToNetworkLayer(this, new TransportLayerPacket(currentPacket));
+
+        while (nextACKedSeqNum + windowSize > lastSentSeqNum) {
+
+            currentPacket = pktQ.poll();
+
+            seqnum ++;
+
+            if(currentPacket != null){
+                currentPacket.setSeqnum(seqnum);
+            }else{
+                //in case there are no packets in the queue
+                break;
+            }
+
+            if (currentPacket != null) {
+                /* timer started */
+                simulator.startTimer(this, 50.0);
+                simulator.sendToNetworkLayer(this, new TransportLayerPacket(currentPacket));
+                
+                sentNotACKed.add(currentPacket);
+                
+                lastSentSeqNum++;
+            }
         }
     }
 
