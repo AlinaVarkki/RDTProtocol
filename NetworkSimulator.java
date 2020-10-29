@@ -1,7 +1,6 @@
 import java.io.ByteArrayOutputStream;
 import java.text.NumberFormat;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Random;
 
@@ -158,16 +157,11 @@ public class NetworkSimulator {
         if (debugLevel > 2) {
             System.out.format("        (%.2f) NetworkSimulator: STOP TIMER.\n", simulationTime);
         }
-
-        Iterator<Event> i = eventQueue.iterator();
-        while(i.hasNext()) {
-            Event e = i.next();
+        for (Event e : eventQueue) {
             if (e.getEvType() == EventType.TIMER_INTERRUPT && e.getEvEntity().equals(t)) {
-                i.remove();
-                removed = true;
+                removed = eventQueue.remove(e);
             }
         }
-
         if (!removed) {
             System.out.println("Warning: unable to cancel timer for " + t.getName() + " as it doesn't seem to exist.");
         }
@@ -211,7 +205,7 @@ public class NetworkSimulator {
         if (rng.nextDouble() < lossProb) {
             numLost++;
             if (debugLevel > 0) {
-                System.out.format("        (%.2f) NetworkSimulator: %s losing packet: (%s)\n", simulationTime, source.getName(), pkt);
+                System.out.format("        (%.2f) NetworkSimulator: losing packet.\n", simulationTime);
             }
             return;
         }
@@ -222,7 +216,7 @@ public class NetworkSimulator {
             double x;
             if ((x = rng.nextDouble()) < .75) { // payload
                 if (debugLevel > 0) {
-                    System.out.format("        (%.2f) NetworkSimulator: %s corrupting packet payload: (%s)\n", simulationTime, source.getName(), pkt);
+                    System.out.format("        (%.2f) NetworkSimulator: corrupting packet payload.\n", simulationTime);
                 }
                 byte[] pktData = pktCopy.getData();
                 for (int i = (rng.nextInt(4) + 1); i >= 0; i--) {
@@ -230,12 +224,12 @@ public class NetworkSimulator {
                 }
             } else if (x < .875) { // seqnum
                 if (debugLevel > 0) {
-                    System.out.format("        (%.2f) NetworkSimulator: %s corrupting packet seqnum: (%s)\n", simulationTime, source.getName(), pkt);
+                    System.out.format("        (%.2f) NetworkSimulator: corrupting packet seqnum.\n", simulationTime);
                 }
                 pktCopy.setSeqnum(-99999); // should never be negative...
             } else { // acknum
                 if (debugLevel > 0) {
-                    System.out.format("        (%.2f) NetworkSimulator: %s corrupting packet acknum: (%s)\n", simulationTime, source.getName(), pkt);
+                    System.out.format("        (%.2f) NetworkSimulator: corrupting packet acknum.\n", simulationTime);
                 }
                 pktCopy.setAcknum(-99999); // should never be negative...
             }
@@ -248,7 +242,7 @@ public class NetworkSimulator {
         }
 
         if (debugLevel > 1) {
-            System.out.format("        (%.2f) NetworkSimulator.sendToNetworkLayer(%s, %s)\n", simulationTime, source.getName(), new String(pktCopy.getData()));
+            System.out.format("        (%.2f) NetworkSimulator.sendToNetworkLayer(%s, %s)\n", simulationTime, source.getName(), pktCopy.toString());
         }
         eventQueue.add(new Event((lastTime + (1 + 2 * rng.nextFloat())), EventType.FROM_LAYER3, (source.equals(sender) ? receiver : sender), pktCopy));
     }
