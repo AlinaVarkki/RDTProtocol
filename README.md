@@ -1,6 +1,6 @@
 # CS313 Networking Group Assessment | Reliable Data Transfer (RDT) 
 
-This project contains java implementation of pipelined Reliable Data Transfer transfer layer protocol. RDT handles lost and corrupted packets by implementing a queue that keeps track of send packets and a checksum. The code includes a network simulator that makes use of the protocol.
+This project contains java implementation of pipelined Reliable Data Transfer protocol. RDT handles lost and corrupted packets by implementing a queue that keeps track of send packets and a checksum. The code includes a network simulator that makes use of the protocol.
 
 # Output
 When the simulation is run, packets behaviour is displayed
